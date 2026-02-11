@@ -30,7 +30,7 @@ export default function Landing() {
           <img
             src={heroImage}
             alt="Trusty Work Background"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-[70%_20%] sm:object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/40"></div>
         </div>
