@@ -22,8 +22,10 @@ import { format } from 'date-fns';
 
 export default function WorkerProfile() {
   const navigate = useNavigate();
-  const { currentUser } = useApp();
-  const worker = currentUser as Worker;
+  const { currentUser, workers } = useApp();
+  
+  // Use the first worker (Mary Wanjiku) if no currentUser is set
+  const worker = (currentUser || workers[0]) as Worker;
 
   if (!worker) {
     return (
@@ -124,14 +126,21 @@ export default function WorkerProfile() {
           <div className="animate-fade-up animation-delay-200">
             <h3 className="text-lg font-semibold text-foreground mb-3">Earned Badges</h3>
             <div className="bg-card rounded-xl p-4 shadow-soft border border-border">
-              <div className="flex justify-around">
+              <div className="space-y-4">
                 {worker.badges.map((badge) => (
-                  <BadgeIcon 
-                    key={badge.id} 
-                    type={badge.type} 
-                    size="md" 
-                    showLabel 
-                  />
+                  <div key={badge.id} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
+                    <BadgeIcon 
+                      type={badge.type} 
+                      size="md" 
+                    />
+                    <div>
+                      <h4 className="font-semibold text-foreground">{badge.name}</h4>
+                      <p className="text-sm text-muted-foreground">{badge.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Earned {new Date(badge.earnedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

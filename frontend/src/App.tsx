@@ -14,6 +14,8 @@ import AttestationsList from "./pages/AttestationsList";
 import PostJob from "./pages/PostJob";
 import GenerateCV from "./pages/GenerateCV";
 import NotFound from "./pages/NotFound";
+import EmployerDashboard from "./pages/EmployerDashboard";
+import EmployerJobs from "./pages/EmployerJobs";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,9 @@ const App = () => (
               <Route path="/attestations" element={<AttestationsList />} />
               <Route path="/attestations/new" element={<CreateAttestation />} />
               <Route path="/cv/generate" element={<GenerateCV />} />
+              {/* Employer Routes */}
+              <Route path="/employer" element={<EmployerDashboard />} />http://localhost:8080/employer
+              <Route path="/employer/jobs" element={<EmployerJobs />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>

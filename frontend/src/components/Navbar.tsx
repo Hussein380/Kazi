@@ -45,8 +45,9 @@ export function Navbar() {
                 <div className="hidden md:flex md:items-center md:gap-6">
                     {userRole === 'employer' && (
                         <>
+                            <NavLink to="/employer">Dashboard</NavLink>
+                            <NavLink to="/employer/jobs">My Jobs</NavLink>
                             <NavLink to="/workers">Browse Workers</NavLink>
-                            <NavLink to="/jobs">My Jobs</NavLink>
                             <NavLink to="/attestations">Attestations</NavLink>
                         </>
                     )}
@@ -55,6 +56,7 @@ export function Navbar() {
                         <>
                             <NavLink to="/profile">My Profile</NavLink>
                             <NavLink to="/jobs">Find Jobs</NavLink>
+                            <NavLink to="/workers">Browse Workers</NavLink>
                             <NavLink to="/cv/generate">CV Generator</NavLink>
                         </>
                     )}
@@ -93,8 +95,9 @@ export function Navbar() {
                 <div className="md:hidden border-t p-4 space-y-4 bg-background animate-in slide-in-from-top-4">
                     {userRole === 'employer' && (
                         <div className="flex flex-col gap-3">
+                            <Link to="/employer" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                            <Link to="/employer/jobs" onClick={() => setIsMenuOpen(false)}>My Jobs</Link>
                             <Link to="/workers" onClick={() => setIsMenuOpen(false)}>Browse Workers</Link>
-                            <Link to="/jobs" onClick={() => setIsMenuOpen(false)}>My Jobs</Link>
                             <Link to="/attestations" onClick={() => setIsMenuOpen(false)}>Attestations</Link>
                         </div>
                     )}
@@ -103,6 +106,7 @@ export function Navbar() {
                         <div className="flex flex-col gap-3">
                             <Link to="/profile" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
                             <Link to="/jobs" onClick={() => setIsMenuOpen(false)}>Find Jobs</Link>
+                            <Link to="/workers" onClick={() => setIsMenuOpen(false)}>Browse Workers</Link>
                             <Link to="/cv/generate" onClick={() => setIsMenuOpen(false)}>CV Generator</Link>
                         </div>
                     )}

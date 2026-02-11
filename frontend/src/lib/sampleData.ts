@@ -17,16 +17,16 @@ export const sampleWorkers: Worker[] = [
       {
         id: 'b1',
         type: 'experienced',
-        name: 'Experienced',
-        description: '2+ years of verified experience',
+        name: 'Certified House Keeper',
+        description: 'Professional house keeping certification with verified experience',
         earnedAt: new Date('2024-06-01'),
         stellarTxHash: 'abc123...',
       },
       {
         id: 'b2',
         type: 'reliable',
-        name: 'Reliable',
-        description: '3+ confirmed work attestations',
+        name: 'Certified Nanny',
+        description: 'Certified childcare professional with 5+ years experience',
         earnedAt: new Date('2024-08-15'),
         stellarTxHash: 'def456...',
       },
@@ -128,7 +128,7 @@ export const sampleJobs: Job[] = [
     workType: 'nanny',
     description: 'Looking for an experienced nanny to care for our two children (ages 3 and 6). Must be patient, loving, and able to help with homework.',
     location: 'Nairobi - Lavington',
-    salary: 'KES 25,000 - 35,000/month',
+    // salary: 'KES 25,000 - 35,000/month', // Removed as per privacy preference
     isLiveIn: true,
     createdAt: new Date('2025-01-15'),
     status: 'open',
@@ -141,7 +141,7 @@ export const sampleJobs: Job[] = [
     workType: 'cleaner',
     description: 'Need a reliable cleaner for 3 days per week. Large home in Karen area.',
     location: 'Nairobi - Karen',
-    salary: 'KES 1,500/day',
+    // salary: 'KES 1,500/day', // Removed as per privacy preference
     isLiveIn: false,
     createdAt: new Date('2025-01-20'),
     status: 'open',
@@ -154,7 +154,7 @@ export const sampleJobs: Job[] = [
     workType: 'caregiver',
     description: 'Seeking compassionate caregiver for 85-year-old grandmother. Experience with elderly care preferred.',
     location: 'Nairobi - Muthaiga',
-    salary: 'KES 30,000/month',
+    // salary: 'KES 30,000/month', // Removed as per privacy preference
     isLiveIn: true,
     createdAt: new Date('2025-01-18'),
     status: 'open',
