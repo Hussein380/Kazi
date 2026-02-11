@@ -2,6 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import { getNFTs } from "./stellar/nft.service";
 import { HorizonApi } from "@stellar/stellar-sdk/lib/horizon";
+import { Router } from "./routes";
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -114,6 +115,8 @@ ${nfts![0]!.asset_code} - ${Number(nfts![0].balance)}
   res.set("Content-Type", "text/plain");
   res.send(response);
 });
+
+app.use(Router);
 
 app.listen(8000, () => {
   console.log("USSD server running on port 8000");
