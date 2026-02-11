@@ -24,10 +24,14 @@ export async function createWallet() {
   tx.sign(platformKeypair);
   await server.submitTransaction(tx);
 
-  return {
+  const newAccountDtls: any = {
     publicKey: newAccount.publicKey(),
     secret: newAccount.secret(),
   };
+
+  console.log(`New account dtls -> ${JSON.stringify(newAccountDtls)}`);
+
+  return newAccountDtls;
 
   //   console.log("New key pair created!");
   //   console.log("Account ID: " + newAccount.publicKey());

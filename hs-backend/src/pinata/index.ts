@@ -20,14 +20,17 @@ async function fetchByCID(cid: string) {
   try {
     const data = await pinata.gateways.public.get(cid);
     console.log(data);
+    return data.data;
   } catch (error) {
     console.log(error);
   }
 }
 
-async function uploadJsonToPinata(payload: {}, name?: string) {
+export async function uploadJsonToPinata(payload: any, name?: string) {
   try {
-    const upload = await pinata.upload.public.json(payload).name(name ?? "");
+    const upload = await pinata.upload.public
+      .json(payload, {})
+      .name(`${name ?? "data"}.json`);
     return upload;
   } catch (error) {
     console.log(error);
@@ -43,40 +46,46 @@ const workHistory = {
 };
 
 const currentDate = new Date();
-const timestamp = format(currentDate, "yyyyMMddHHmmss");
+export const timestamp = format(currentDate, "yyyyMMddHHmmss");
 const fileName = `work_history_${timestamp}`;
 
-uploadJsonToPinata(workHistory).then(async (res) => {
-  console.log(res);
-  const employeeAccount = await server.loadAccount(workHistory.employee);
+// uploadJsonToPinata([workHistory])
+//   .then(async (res) => {
+//     console.log(res);
+//     const platformAccount = await server.loadAccount(
+//       platformKeypair.publicKey()
+//     );
 
-  const transaction = new StellarSdk.TransactionBuilder(employeeAccount, {
-    fee: StellarSdk.BASE_FEE,
-    networkPassphrase,
-  })
-    .addOperation(
-      StellarSdk.Operation.payment({
-        destination: workHistory.employee,
-        asset: Asset.native(),
-        amount: "0.0000001", // Minimal amount
-      })
-    )
-    .addOperation(
-      StellarSdk.Operation.manageData({
-        name: fileName,
-        value: res?.cid,
-      })
-    )
-    .addMemo(StellarSdk.Memo.text(fileName))
-    .setTimeout(30)
-    .build();
+//     const transaction = new StellarSdk.TransactionBuilder(platformAccount, {
+//       fee: StellarSdk.BASE_FEE,
+//       networkPassphrase,
+//     })
+//       .addOperation(
+//         StellarSdk.Operation.payment({
+//           destination: workHistory.employee,
+//           asset: Asset.native(),
+//           amount: "0.0000001",
+//         })
+//       )
+//       .addOperation(
+//         StellarSdk.Operation.manageData({
+//           name: fileName,
+//           value: res?.cid,
+//         })
+//       )
+//       .addMemo(StellarSdk.Memo.text(fileName))
+//       .setTimeout(30)
+//       .build();
 
-  transaction.sign(platformKeypair);
-  const submitRes = await server.submitTransaction(transaction);
-  console.log(submitRes);
-});
+//     transaction.sign(platformKeypair);
+//     const submitRes = await server.submitTransaction(transaction);
+//     console.log(submitRes);
+//   })
+//   .catch((e) => {
+//     console.log(e);
+//   });
 
-// fetchByCID("bafkreidvbhs33ighmljlvr7zbv2ywwzcmp5adtf4kqvlly67cy56bdtmve");
+// fetchByCID("bafkreiglrhf5l5nv4e63bbomcvduvael6546oqwu6j37t4vtwhwv3ugimi");
 async function retrieveWorkHistoryCID(
   accountPublicKey: string,
   dataKey: string
@@ -95,10 +104,11 @@ async function retrieveWorkHistoryCID(
 
   // Decode from base64
   const cid = Buffer.from(dataValue, "base64").toString("utf-8");
+  console.log(cid);
   return cid;
 }
 
-retrieveWorkHistoryCID(
-  "GDDYUYQUJSCGSOVEOXLM5FO42J2SOOLVBLBXPGZU2I47H5QW65OBNVVT",
-  fileName
-);
+// retrieveWorkHistoryCID(
+//   "GAWXHLNVGZYDQHULH3HL7BD7X7U34VOIB2TVTOP3UQXI5N74T34PFZAD",
+//   "work_history_20260211232537"
+// );
