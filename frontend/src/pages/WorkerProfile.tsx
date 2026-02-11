@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { sampleAttestations } from '@/lib/sampleData';
 import { WORK_TYPE_CONFIG } from '@/lib/constants';
-import { 
-  MapPin, 
-  Calendar, 
-  Share2, 
-  Edit, 
+import {
+  MapPin,
+  Calendar,
+  Share2,
+  Edit,
   ExternalLink,
   CheckCircle,
   Clock,
@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 export default function WorkerProfile() {
   const navigate = useNavigate();
   const { currentUser, workers } = useApp();
-  
+
   // Use the first worker (Mary Wanjiku) if no currentUser is set
   const worker = (currentUser || workers[0]) as Worker;
 
@@ -48,7 +48,7 @@ export default function WorkerProfile() {
         <div className="bg-card rounded-2xl p-6 shadow-soft border border-border animate-fade-up">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-2xl font-bold text-primary-foreground">
                   {worker.name.charAt(0)}
                 </span>
@@ -89,7 +89,7 @@ export default function WorkerProfile() {
           {/* Work Types */}
           <div className="mt-4 flex flex-wrap gap-2">
             {worker.workTypes.map((type) => (
-              <span 
+              <span
                 key={type}
                 className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium"
               >
@@ -129,9 +129,9 @@ export default function WorkerProfile() {
               <div className="space-y-4">
                 {worker.badges.map((badge) => (
                   <div key={badge.id} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
-                    <BadgeIcon 
-                      type={badge.type} 
-                      size="md" 
+                    <BadgeIcon
+                      type={badge.type}
+                      size="md"
                     />
                     <div>
                       <h4 className="font-semibold text-foreground">{badge.name}</h4>
@@ -159,7 +159,7 @@ export default function WorkerProfile() {
           </div>
           <div className="space-y-3">
             {attestations.map((attestation) => (
-              <div 
+              <div
                 key={attestation.id}
                 className="bg-card rounded-xl p-4 shadow-soft border border-border"
               >
@@ -177,7 +177,7 @@ export default function WorkerProfile() {
                   </div>
                   <StatusBadge status={attestation.status} />
                 </div>
-                
+
                 <div className="flex items-center gap-1 text-sm text-muted-foreground mt-2">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
@@ -197,9 +197,9 @@ export default function WorkerProfile() {
         </div>
 
         {/* Generate CV Button */}
-        <Button 
-          variant="warm" 
-          size="xl" 
+        <Button
+          variant="warm"
+          size="xl"
           className="w-full animate-fade-up animation-delay-300"
           onClick={() => navigate('/cv/generate')}
         >
