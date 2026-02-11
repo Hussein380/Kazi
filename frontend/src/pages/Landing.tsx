@@ -22,7 +22,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col min-h-[100dvh]">
       {/* Hero Section with Background Image */}
       <section className="relative px-6 pt-32 pb-40 lg:pt-48 lg:pb-60 overflow-hidden">
         {/* Background Image & Overlay */}
