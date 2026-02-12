@@ -11,5 +11,6 @@ export const networkPassphrase = Networks.TESTNET;
 
 export const platformKeypair = Keypair.fromSecret(process.env.PLATFORM_SECRET!);
 
-const currentDate = new Date();
-export const timestamp = format(currentDate, "yyyyMMddHHmmss");
+export function generateTimestamp(): string {
+  return format(new Date(), "yyyyMMddHHmmss");
+}

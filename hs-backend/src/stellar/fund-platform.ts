@@ -2,7 +2,7 @@
 import { platformKeypair } from "./stellar.config";
 import axios from "axios";
 
-async function fundPlatformAccount() {
+export async function fundPlatformAccount() {
   const publicKey = platformKeypair.publicKey();
   console.log("Platform Public Key:", publicKey);
 
@@ -17,4 +17,4 @@ async function fundPlatformAccount() {
   }
 }
 
-fundPlatformAccount();
+// fundPlatformAccount();

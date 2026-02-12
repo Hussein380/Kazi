@@ -1,4 +1,4 @@
-export type UserRole = 'worker' | 'employer';
+export type UserRole = 'employee' | 'employer';
 
 export type WorkType = 
   | 'nanny'
@@ -30,8 +30,8 @@ export interface User {
   createdAt: Date;
 }
 
-export interface Worker extends User {
-  role: 'worker';
+export interface Employee extends User {
+  role: 'employee';
   workTypes: WorkType[];
   bio: string;
   yearsExperience: number;

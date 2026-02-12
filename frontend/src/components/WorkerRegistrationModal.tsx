@@ -1,25 +1,40 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
-import { registerUser } from '@/lib/api';
-import { workerRegistrationSchema, type WorkerRegistrationData } from '@/lib/schemas';
-import { KENYA_COUNTIES } from '@/lib/constants';
-import { WORK_TYPE_CONFIG } from '@/lib/constants';
-import { WorkType } from '@/types';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
+import { useApp } from "@/context/AppContext";
+import { getEmployeeProfile, registerUser } from "@/lib/api";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+  workerRegistrationSchema,
+  type WorkerRegistrationData,
+} from "@/lib/schemas";
+import { KENYA_COUNTIES } from "@/lib/constants";
+import { WORK_TYPE_CONFIG } from "@/lib/constants";
+import { WorkType } from "@/types";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import { Loader2 } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { Loader2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -30,7 +45,7 @@ export function WorkerRegistrationModal({ open, onOpenChange }: Props) {
   const { login } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const {
     register,
@@ -40,29 +55,36 @@ export function WorkerRegistrationModal({ open, onOpenChange }: Props) {
     formState: { errors },
   } = useForm<WorkerRegistrationData>({
     resolver: zodResolver(workerRegistrationSchema),
-    defaultValues: { name: '', phone: '+254', county: '', workTypes: [], pin: '' },
+    defaultValues: {
+      name: "",
+      phone: "+254",
+      county: "",
+      workTypes: [],
+      pin: "",
+    },
   });
 
-  const selectedWorkTypes = watch('workTypes');
+  const selectedWorkTypes = watch("workTypes");
 
   const toggleWorkType = (wt: string) => {
     const current = selectedWorkTypes || [];
     const next = current.includes(wt)
       ? current.filter((t) => t !== wt)
       : [...current, wt];
-    setValue('workTypes', next, { shouldValidate: true });
+    setValue("workTypes", next, { shouldValidate: true });
   };
 
   const onSubmit = async (data: WorkerRegistrationData) => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const res = await registerUser({ ...data, role: 'worker' });
-      login(res);
+      const res = await registerUser({ ...data, role: "employee" });
+      const employeeProfile = await getEmployeeProfile(res.publicKey);
+      login({ ...res, profile: employeeProfile });
       onOpenChange(false);
-      navigate('/profile');
+      navigate("/profile");
     } catch (e: any) {
-      setError(e.message || 'Registration failed');
+      setError(e.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -73,38 +95,62 @@ export function WorkerRegistrationModal({ open, onOpenChange }: Props) {
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Worker Profile</DialogTitle>
-          <DialogDescription>Join Trusty Work and start building your verified career.</DialogDescription>
+          <DialogDescription>
+            Join Trusty Work and start building your verified career.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="w-name">Full Name</Label>
-            <Input id="w-name" placeholder="e.g. Mary Wanjiku" {...register('name')} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            <Input
+              id="w-name"
+              placeholder="e.g. Mary Wanjiku"
+              {...register("name")}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
           </div>
 
           {/* Phone */}
           <div className="space-y-2">
             <Label htmlFor="w-phone">Phone Number</Label>
-            <Input id="w-phone" placeholder="+254712345678" {...register('phone')} />
-            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+            <Input
+              id="w-phone"
+              placeholder="+254712345678"
+              {...register("phone")}
+            />
+            {errors.phone && (
+              <p className="text-sm text-destructive">{errors.phone.message}</p>
+            )}
           </div>
 
           {/* County */}
           <div className="space-y-2">
             <Label>County</Label>
-            <Select onValueChange={(v) => setValue('county', v, { shouldValidate: true })}>
+            <Select
+              onValueChange={(v) =>
+                setValue("county", v, { shouldValidate: true })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select county" />
               </SelectTrigger>
               <SelectContent>
                 {KENYA_COUNTIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.county && <p className="text-sm text-destructive">{errors.county.message}</p>}
+            {errors.county && (
+              <p className="text-sm text-destructive">
+                {errors.county.message}
+              </p>
+            )}
           </div>
 
           {/* Work Types */}
@@ -127,13 +173,20 @@ export function WorkerRegistrationModal({ open, onOpenChange }: Props) {
                 );
               })}
             </div>
-            {errors.workTypes && <p className="text-sm text-destructive">{errors.workTypes.message}</p>}
+            {errors.workTypes && (
+              <p className="text-sm text-destructive">
+                {errors.workTypes.message}
+              </p>
+            )}
           </div>
 
           {/* PIN */}
           <div className="space-y-2">
             <Label>Create 4-digit PIN</Label>
-            <InputOTP maxLength={4} onChange={(v) => setValue('pin', v, { shouldValidate: true })}>
+            <InputOTP
+              maxLength={4}
+              onChange={(v) => setValue("pin", v, { shouldValidate: true })}
+            >
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -141,14 +194,16 @@ export function WorkerRegistrationModal({ open, onOpenChange }: Props) {
                 <InputOTPSlot index={3} />
               </InputOTPGroup>
             </InputOTP>
-            {errors.pin && <p className="text-sm text-destructive">{errors.pin.message}</p>}
+            {errors.pin && (
+              <p className="text-sm text-destructive">{errors.pin.message}</p>
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {loading ? 'Creating wallet...' : 'Create Profile'}
+            {loading ? "Creating wallet..." : "Create Profile"}
           </Button>
         </form>
       </DialogContent>

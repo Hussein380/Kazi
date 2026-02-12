@@ -1,21 +1,27 @@
-import { PageLayout } from '@/components/layout/PageLayout';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { useApp } from '@/context/AppContext';
-import { sampleAttestations } from '@/lib/sampleData';
-import { WORK_TYPE_CONFIG } from '@/lib/constants';
-import { WorkTypeIcon } from '@/components/icons/WorkTypeIcon';
-import { Attestation } from '@/types';
-import { 
-  Calendar, 
-  ExternalLink, 
-  CheckCircle, 
+import { PageLayout } from "@/components/layout/PageLayout";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { useApp } from "@/context/AppContext";
+import { sampleAttestations } from "@/lib/sampleData";
+import { WORK_TYPE_CONFIG } from "@/lib/constants";
+import { WorkTypeIcon } from "@/components/icons/WorkTypeIcon";
+import { Attestation } from "@/types";
+import {
+  Calendar,
+  ExternalLink,
+  CheckCircle,
   XCircle,
-  Clock
-} from 'lucide-react';
-import { format } from 'date-fns';
+  Clock,
+} from "lucide-react";
+import { format } from "date-fns";
 
-function AttestationCard({ attestation, isWorker }: { attestation: Attestation; isWorker: boolean }) {
+function AttestationCard({
+  attestation,
+  isWorker,
+}: {
+  attestation: Attestation;
+  isWorker: boolean;
+}) {
   return (
     <div className="bg-card rounded-xl p-4 shadow-soft border border-border">
       <div className="flex items-start justify-between mb-3">
@@ -36,7 +42,8 @@ function AttestationCard({ attestation, isWorker }: { attestation: Attestation; 
       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
         <Calendar className="h-3.5 w-3.5" />
         <span>
-          {format(attestation.startDate, 'MMM d, yyyy')} — {format(attestation.endDate, 'MMM d, yyyy')}
+          {format(attestation.startDate, "MMM d, yyyy")} —{" "}
+          {format(attestation.endDate, "MMM d, yyyy")}
         </span>
       </div>
 
@@ -47,7 +54,7 @@ function AttestationCard({ attestation, isWorker }: { attestation: Attestation; 
       )}
 
       {/* Actions for pending attestations */}
-      {attestation.status === 'pending' && isWorker && (
+      {attestation.status === "pending" && isWorker && (
         <div className="flex gap-2 mt-3 pt-3 border-t border-border">
           <Button variant="success" size="sm" className="flex-1">
             <CheckCircle className="h-4 w-4" />
@@ -73,16 +80,20 @@ function AttestationCard({ attestation, isWorker }: { attestation: Attestation; 
 
 export default function AttestationsList() {
   const { userRole } = useApp();
-  const isWorker = userRole === 'worker';
-  
+  const isWorker = userRole === "employee";
+
   // Filter based on role (in real app, would filter by user ID)
   const attestations = sampleAttestations;
-  
-  const pendingAttestations = attestations.filter(a => a.status === 'pending');
-  const completedAttestations = attestations.filter(a => a.status === 'completed' || a.status === 'confirmed');
+
+  const pendingAttestations = attestations.filter(
+    (a) => a.status === "pending",
+  );
+  const completedAttestations = attestations.filter(
+    (a) => a.status === "completed" || a.status === "confirmed",
+  );
 
   return (
-    <PageLayout title={isWorker ? 'Work History' : 'Attestations'}>
+    <PageLayout title={isWorker ? "Work History" : "Attestations"}>
       <div className="px-4 py-6">
         {/* Pending Section */}
         {pendingAttestations.length > 0 && (
@@ -95,9 +106,9 @@ export default function AttestationsList() {
             </div>
             <div className="space-y-3">
               {pendingAttestations.map((attestation) => (
-                <AttestationCard 
-                  key={attestation.id} 
-                  attestation={attestation} 
+                <AttestationCard
+                  key={attestation.id}
+                  attestation={attestation}
                   isWorker={isWorker}
                 />
               ))}
@@ -115,9 +126,9 @@ export default function AttestationsList() {
           </div>
           <div className="space-y-3">
             {completedAttestations.map((attestation) => (
-              <AttestationCard 
-                key={attestation.id} 
-                attestation={attestation} 
+              <AttestationCard
+                key={attestation.id}
+                attestation={attestation}
                 isWorker={isWorker}
               />
             ))}

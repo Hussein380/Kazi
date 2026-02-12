@@ -1,14 +1,27 @@
-import { PageLayout } from '@/components/layout/PageLayout';
-import { WorkTypeIcon } from '@/components/icons/WorkTypeIcon';
-import { BadgeIcon } from '@/components/icons/BadgeIcon';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { sampleWorkers } from '@/lib/sampleData';
-import { WORK_TYPE_CONFIG } from '@/lib/constants';
-import { Worker } from '@/types';
-import { MapPin, CheckCircle, ChevronRight, Star, Calendar, Briefcase } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { PageLayout } from "@/components/layout/PageLayout";
+import { WorkTypeIcon } from "@/components/icons/WorkTypeIcon";
+import { BadgeIcon } from "@/components/icons/BadgeIcon";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { sampleWorkers } from "@/lib/sampleData";
+import { WORK_TYPE_CONFIG } from "@/lib/constants";
+import { Worker } from "@/types";
+import {
+  MapPin,
+  CheckCircle,
+  ChevronRight,
+  Star,
+  Calendar,
+  Briefcase,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { NavLink } from "@/components/NavLink";
 
 function WorkerCard({ worker }: { worker: Worker }) {
   const navigate = useNavigate();
@@ -31,7 +44,9 @@ function WorkerCard({ worker }: { worker: Worker }) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground truncate">{worker.name}</h3>
+              <h3 className="font-semibold text-foreground truncate">
+                {worker.name}
+              </h3>
               {worker.badges.length > 0 && (
                 <Star className="h-4 w-4 text-badge-gold flex-shrink-0" />
               )}
@@ -84,7 +99,8 @@ function WorkerCard({ worker }: { worker: Worker }) {
         {/* Experience */}
         <div className="mt-3 pt-3 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            {worker.yearsExperience} years experience • {worker.badges.length} verified badges
+            {worker.yearsExperience} years experience • {worker.badges.length}{" "}
+            verified badges
           </p>
         </div>
       </div>
@@ -101,7 +117,9 @@ function WorkerCard({ worker }: { worker: Worker }) {
               </div>
               <div>
                 <h3 className="text-xl font-bold">{worker.name}</h3>
-                <p className="text-sm text-muted-foreground">{worker.location}</p>
+                <p className="text-sm text-muted-foreground">
+                  {worker.location}
+                </p>
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -123,9 +141,14 @@ function WorkerCard({ worker }: { worker: Worker }) {
                 Professional Experience
               </h4>
               <div className="bg-secondary/50 rounded-lg p-3">
-                <p className="text-foreground font-medium">{worker.yearsExperience} years of experience</p>
+                <p className="text-foreground font-medium">
+                  {worker.yearsExperience} years of experience
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Specialized in {worker.workTypes.map(type => WORK_TYPE_CONFIG[type].label).join(', ')}
+                  Specialized in{" "}
+                  {worker.workTypes
+                    .map((type) => WORK_TYPE_CONFIG[type].label)
+                    .join(", ")}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   {worker.badges.map((badge) => (
@@ -166,7 +189,8 @@ export default function WorkersList() {
         {/* Search hint */}
         <div className="bg-secondary/50 rounded-xl p-4 mb-4">
           <p className="text-sm text-muted-foreground">
-            Browse trusted domestic workers with verified experience and professional badges.
+            Browse trusted domestic workers with verified experience and
+            professional badges.
           </p>
         </div>
 
@@ -188,9 +212,11 @@ export default function WorkersList() {
           <p className="text-sm text-foreground mb-3">
             Want to verify work for someone you employ?
           </p>
-          <Button variant="trust" className="w-full">
-            Create Work Attestation
-          </Button>
+          <NavLink to="/employees" className="w-full">
+            <Button variant="trust" className="w-full">
+              Create Work Attestation
+            </Button>
+          </NavLink>
         </div>
       </div>
     </PageLayout>

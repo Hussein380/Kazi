@@ -1,9 +1,15 @@
-import { useState, createContext, useContext, ReactNode } from 'react';
-import { User, Worker, Employer, UserRole } from '@/types';
-import { sampleWorkers, sampleEmployer } from '@/lib/sampleData';
-import type { AuthResponse } from '@/lib/api';
+import {
+  useState,
+  createContext,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
+import { User, Employee, Employer, UserRole } from "@/types";
+import { sampleWorkers, sampleEmployer } from "@/lib/sampleData";
+import { getEmployeeProfile, type AuthResponse } from "@/lib/api";
 
-const AUTH_STORAGE_KEY = 'trusty_work_auth';
+const AUTH_STORAGE_KEY = "trusty_work_auth";
 
 interface StoredAuth {
   publicKey: string;
@@ -20,10 +26,11 @@ interface AppContextType {
   userRole: UserRole | null;
   setUserRole: (role: UserRole | null) => void;
   publicKey: string | null;
-  workers: Worker[];
+  workers: Employee[];
   employer: Employer | null;
   login: (data: AuthResponse) => void;
   logout: () => void;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -38,7 +45,7 @@ function getStoredAuth(): StoredAuth | null {
   }
 }
 
-function buildUserFromAuth(auth: StoredAuth): User {
+function buildUserFromAuth(auth: any): User {
   const base: User = {
     id: auth.publicKey,
     role: auth.role,
@@ -49,16 +56,17 @@ function buildUserFromAuth(auth: StoredAuth): User {
     createdAt: new Date(),
   };
 
-  if (auth.role === 'worker') {
+  if (auth.role === "employee") {
     return {
       ...base,
       workTypes: auth.workTypes ?? [],
-      bio: '',
+      bio: "",
       yearsExperience: 0,
       badges: [],
       attestations: [],
       isAvailable: true,
-    } as Worker;
+      profile: auth.profile ?? {},
+    };
   }
 
   return base;
@@ -68,23 +76,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const storedAuth = getStoredAuth();
 
   const [currentUser, setCurrentUser] = useState<User | null>(
-    storedAuth ? buildUserFromAuth(storedAuth) : null
+    storedAuth ? buildUserFromAuth(storedAuth) : null,
   );
   const [userRole, setUserRole] = useState<UserRole | null>(
-    storedAuth?.role ?? null
+    storedAuth?.role ?? null,
   );
   const [publicKey, setPublicKey] = useState<string | null>(
-    storedAuth?.publicKey ?? null
+    storedAuth?.publicKey ?? null,
   );
 
-  const login = (data: AuthResponse) => {
-    const auth: StoredAuth = {
+  useEffect(() => {
+    if (currentUser && currentUser.role === "employee") {
+      refreshUserProfile();
+    }
+  }, [currentUser, currentUser]);
+
+  const refreshUserProfile = async () => {
+    if (!currentUser) return;
+
+    const profileData = await getEmployeeProfile(currentUser.publicKey);
+
+    const updatedUser = {
+      ...currentUser,
+      profile: profileData,
+    };
+
+    setCurrentUser(updatedUser);
+
+    // Also update the stored auth data to keep it in sync
+    const storedAuth = getStoredAuth();
+    if (storedAuth) {
+      const updatedAuth = {
+        ...storedAuth,
+        profile: profileData,
+      };
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedAuth));
+    }
+  };
+  const login = (data: any) => {
+    const auth = {
       publicKey: data.publicKey,
       role: data.role,
       name: data.name,
       phone: data.phone,
       county: data.county,
       ...(data.workTypes && { workTypes: data.workTypes }),
+      profile: data.profile ?? {},
     };
 
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
@@ -112,6 +149,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         employer: sampleEmployer,
         login,
         logout,
+        refreshUserProfile,
       }}
     >
       {children}
@@ -122,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 export function useApp() {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider');
+    throw new Error("useApp must be used within an AppProvider");
   }
   return context;
 }

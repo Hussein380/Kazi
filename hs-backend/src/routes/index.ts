@@ -1,9 +1,9 @@
 import { storeOnStellar } from "../stellar/memo.service";
 import { pinata, uploadJsonToPinata } from "../pinata";
-import { createWallet } from "../stellar/wallet.service";
+import { createWallet, fundWallet } from "../stellar/wallet.service";
 import express from "express";
-import { platformKeypair, server, timestamp } from "../stellar/stellar.config";
-import { getNFTs } from "../stellar/nft.service";
+import { platformKeypair, server, generateTimestamp } from "../stellar/stellar.config";
+import { getNFTs, deployNFT } from "../stellar/nft.service";
 import {
   addUser,
   getUserByPhone,
@@ -11,6 +11,8 @@ import {
   userExists,
   StoredUser,
 } from "../store/userStore";
+import axios from "axios";
+import { fundPlatformAccount } from "../stellar/fund-platform";
 
 export const Router = express.Router();
 
@@ -34,7 +36,7 @@ Router.post("/api/auth/register", async (req, res) => {
       return;
     }
 
-    if (role !== "worker" && role !== "employer") {
+    if (role !== "employee" && role !== "employer") {
       res.status(400).json({ error: "Role must be 'worker' or 'employer'" });
       return;
     }
@@ -46,6 +48,9 @@ Router.post("/api/auth/register", async (req, res) => {
 
     // Create Stellar wallet
     const newAccount = await createWallet();
+    
+    await fundPlatformAccount()
+    
     const pinHash = hashPin(pin);
     const createdAt = new Date().toISOString();
 
@@ -63,10 +68,20 @@ Router.post("/api/auth/register", async (req, res) => {
 
     const uploadRes = await uploadJsonToPinata([ipfsPayload]);
 
+    const ts = generateTimestamp();
+
+    if(role === 'employer'){
+      await storeOnStellar(
+        newAccount.publicKey,
+        `employers_${ts}`,
+        uploadRes.cid
+      );
+    }
+
     await storeOnStellar(
-      newAccount.publicKey,
-      `employees_${timestamp}`,
-      uploadRes?.cid!
+        newAccount.publicKey,
+        `employees_${ts}`,
+        uploadRes.cid
     );
 
     // Add to in-memory store
@@ -159,7 +174,7 @@ Router.get("/api/employees", async (req, res) => {
         new Date(b.timestamp || b.createdAt).getTime()
     );
 
-    res.status(200).json(employees);
+    res.status(200).json(employees.filter(emp => emp.role === "employee"));
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -235,18 +250,217 @@ Router.get("/api/employees/:id/nfts", async (req, res) => {
 
 Router.post("/api/employers/:id/create-attestation", async (req, res) => {
   const { id } = req.params;
-  const { employee_pk } = req.body;
+  const { 
+    employee_pk, 
+    workType, 
+    startDate, 
+    endDate, 
+    description,
+  } = req.body;
 
   try {
-    const uploadRes = await uploadJsonToPinata([req.body]);
+    // 1. Upload attestation data to IPFS
+    const attestationData = {
+      employee_pk,
+      employer_pk: id,
+      startDate,
+      endDate,
+      description,
+      createdAt: new Date().toISOString(),
+      // status: "pending"
+    };
+    
+    const uploadRes = await uploadJsonToPinata([attestationData]);
 
+    await fundPlatformAccount();
+
+    // 2. Deploy NFT certificate for the attestation
+    let nftResult = null;
+    try {
+      nftResult = await deployNFT(employee_pk);
+      console.log("NFT deployed successfully:", nftResult);
+    } catch (nftError) {
+      console.error("Warning: NFT deployment failed, continuing with attestation:", nftError);
+    }
+
+    // 3. Create work history entry
+    const workHistoryData = {
+      employee: employee_pk,
+      employer: id,
+      position: workType,
+      startDate,
+      endDate,
+      description,
+      attestationCID: uploadRes.cid,
+      nftResult: nftResult || null,
+      timestamp: new Date().toISOString(),
+      status: "completed"
+    };
+
+    const workHistoryUploadRes = await uploadJsonToPinata([workHistoryData]);
+
+    const ts = generateTimestamp();
+
+    // 4. Store attestation on Stellar
     const storageRes = await storeOnStellar(
       employee_pk,
-      `employees_attestations_${timestamp}`,
-      uploadRes?.cid!
+      `attests_${ts}`,
+      uploadRes.cid
     );
-    res.status(201).json(storageRes);
+
+    // 5. Store work history on Stellar
+    const workHistoryStorageRes = await storeOnStellar(
+      employee_pk,
+      `work_history_${ts}`,
+      workHistoryUploadRes.cid
+    );
+
+    res.status(201).json({
+      attestation: storageRes,
+      workHistory: workHistoryStorageRes,
+      nft: nftResult,
+      message: "Attestation created successfully with NFT certificate"
+    });
   } catch (e) {
     console.log(e);
+    res.status(500).json({ error: "Failed to create attestation", details: e });
   }
 });
+
+Router.get("/api/employees/:id/profile", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const workHistory = await axios.get(
+      `http://localhost:8000/api/employees/${id}/work-history`
+    );
+    // console.log(workHistory);
+    const personalProfile = await axios.get(
+      `http://localhost:8000/api/employees/${id}`
+    );
+    // console.log(personalProfile);
+    const certifications = await getNFTs(id);
+    res.status(200).json({
+      workHistory: workHistory.data,
+      personalProfile: personalProfile.data,
+      certifications,
+    });
+  } catch (e) {console.log(e);
+  }
+});
+
+Router.get("/api/employees/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const employees = await fetch("http://localhost:8000/api/employees");
+
+  if (!employees.ok || employees.status !== 200) {
+    res.status(500).json(employees.text);
+  }
+
+  const employeeWorkHistory = await employees.json();
+  const data =
+    employeeWorkHistory.filter((wh: any) => {
+      return wh.publicKey === id;
+    })[0] ?? {};
+  res.status(200).json(data);
+});
+
+Router.post("/api/jobs", async (req, res) => {
+  try {
+    const {
+      employerId,
+      employerName,
+      title,
+      workType,
+      description,
+      location,
+      salary,
+      isLiveIn,
+    } = req.body;
+
+    // Validate required fields
+    if (!employerId || !title || !workType || !description || !location) {
+      res.status(400).json({
+        error: "Missing required fields: employerId, title, workType, description, location",
+      });
+      return;
+    }
+
+    // Create job object
+    const jobData = {
+      employerId,
+      employerName,
+      title,
+      workType,
+      description,
+      location,
+      salary: salary || null,
+      isLiveIn: isLiveIn || false,
+      createdAt: new Date().toISOString(),
+      status: "open",
+    };
+
+    // Upload job data to IPFS
+    const uploadRes = await uploadJsonToPinata([jobData]);
+
+    const ts = generateTimestamp();
+
+    // Store job on Stellar
+    const storageRes = await storeOnStellar(
+      employerId,
+      `jobs_${ts}`,
+      uploadRes.cid
+    );
+
+    res.status(201).json({
+      id: uploadRes.cid,
+      ...jobData,
+      stellarTx: storageRes,
+      message: "Job posted successfully on-chain",
+    });
+  } catch (error) {
+    console.error("Job posting error:", error);
+    res.status(500).json({ error: "Failed to post job", details: error });
+  }
+});
+
+Router.get("/api/jobs", async (req, res) => {
+  try {
+    const account = await server.loadAccount(platformKeypair.publicKey());
+    let jobs: any[] = [];
+
+    for (const [key, value] of Object.entries(account.data_attr || {})) {
+      if (key.startsWith("jobs_")) {
+        const cid = Buffer.from(value, "base64").toString("utf-8");
+
+        try {
+          const ipfsData = await pinata.gateways.public.get(cid);
+
+          if (Array.isArray(ipfsData.data)) {
+            jobs = [...jobs, ...ipfsData.data];
+          } else if (ipfsData.data != null) {
+            jobs = [...jobs, ipfsData.data];
+          }
+        } catch (error) {
+          console.error(`Error processing ${key}:`, error);
+        }
+      }
+    }
+
+    jobs.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    res.status(200).json(jobs);
+  } catch (error: any) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+export default Router;

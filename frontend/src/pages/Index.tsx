@@ -1,7 +1,7 @@
-import { useApp } from '@/context/AppContext';
-import Landing from './Landing';
-import WorkerProfile from './WorkerProfile';
-import WorkersList from './WorkersList';
+import { useApp } from "@/context/AppContext";
+import Landing from "./Landing";
+import WorkerProfile from "./WorkerProfile";
+import WorkersList from "./WorkersList";
 
 export default function Index() {
   const { userRole } = useApp();
@@ -12,7 +12,7 @@ export default function Index() {
   }
 
   // Show appropriate home based on role
-  if (userRole === 'worker') {
+  if (userRole === "employee") {
     return <WorkerProfile />;
   }
 

@@ -27,14 +27,10 @@ async function fetchByCID(cid: string) {
 }
 
 export async function uploadJsonToPinata(payload: any, name?: string) {
-  try {
-    const upload = await pinata.upload.public
-      .json(payload, {})
-      .name(`${name ?? "data"}.json`);
-    return upload;
-  } catch (error) {
-    console.log(error);
-  }
+  const upload = await pinata.upload.public
+    .json(payload, {})
+    .name(`${name ?? "data"}.json`);
+  return upload;
 }
 
 const workHistory = {
