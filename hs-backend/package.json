@@ -17,14 +17,18 @@
     "@stellar/stellar-sdk": "^14.5.0",
     "axios": "^1.13.5",
     "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "helia": "^6.0.20",
-    "pinata": "^2.5.4"
+    "nodemon": "^3.1.11",
+    "pinata": "^2.5.4",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.6",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6"
   }
 }

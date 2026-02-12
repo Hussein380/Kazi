@@ -1,17 +1,61 @@
 import express from "express";
 import bodyParser from "body-parser";
+import cors from "cors";
 import { getNFTs } from "./stellar/nft.service";
-import { HorizonApi } from "@stellar/stellar-sdk/lib/horizon";
 import { Router } from "./routes";
+import { addUser, getUserByPhone, hashPin, userExists } from "./store/userStore";
+import { platformKeypair, server } from "./stellar/stellar.config";
+import { pinata } from "./pinata";
 
 const app = express();
+
+app.use(cors({ origin: "http://localhost:8080", credentials: true}));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// Fake in-memory store (replace with DB)
-const users: any = {};
-// Structure:
-// users[phoneNumber] = { role: "worker" | "employer", pin: "1234", language: "en" }
+// Hydrate user store from Stellar/IPFS on startup
+async function hydrateUserStore() {
+  try {
+    const account = await server.loadAccount(platformKeypair.publicKey());
+    let hydrated = 0;
+
+    for (const [key, value] of Object.entries(account.data_attr || {})) {
+      if (key.startsWith("employees_")) {
+        const cid = Buffer.from(value, "base64").toString("utf-8");
+        try {
+          const ipfsData = await pinata.gateways.public.get(cid);
+          const records = Array.isArray(ipfsData.data)
+            ? ipfsData.data
+            : ipfsData.data != null
+            ? [ipfsData.data]
+            : [];
+
+          for (const record of records) {
+            if (record.phoneNumber && !userExists(record.phone)) {
+              addUser({
+                name: record.name || "",
+                phone: record.phoneNumber,
+                county: record.county || "",
+                role: record.role || "worker",
+                pinHash: record.pinHash || "",
+                publicKey: record.publicKey || "",
+                workTypes: record.preferred_roles,
+                createdAt: record.createdAt || new Date().toISOString(),
+              });
+              hydrated++;
+            }
+          }
+        } catch (err) {
+          console.error(`Error hydrating from ${key}:`, err);
+        }
+      }
+    }
+
+    console.log(`User store hydrated: ${hydrated} users loaded`);
+  } catch (err) {
+    console.error("Failed to hydrate user store:", err);
+  }
+}
 
 app.post("/ussd", async (req, res) => {
   const { phoneNumber, text } = req.body;
@@ -21,10 +65,6 @@ app.post("/ussd", async (req, res) => {
 
   // STEP 1: LANGUAGE SELECTION
   if (text === "") {
-    //     response = `CON Choose Language:
-    // 1. English
-    // 2. Kiswahili`;
-
     const nfts = await getNFTs(
       "GABUXL4YM52I4LAPZPWAU5NBEYG46E77WWTRGTX3IVHSNIJZDDL2BGIU"
     );
@@ -46,9 +86,7 @@ ${nfts![0]!.asset_code} - ${Number(nfts![0].balance)}
 
   // STEP 3: REGISTER OR LOGIN
   else if (input.length === 2) {
-    const role = input[1];
-
-    response = `CON 
+    response = `CON
 1. Register
 2. Login`;
   }
@@ -60,7 +98,17 @@ ${nfts![0]!.asset_code} - ${Number(nfts![0].balance)}
     const role = input[1] === "1" ? "worker" : "employer";
     const pin = input[3];
 
-    users[phoneNumber] = { role, pin };
+    if (!userExists(phoneNumber)) {
+      addUser({
+        name: "",
+        phone: phoneNumber,
+        county: "",
+        role: role as "worker" | "employer",
+        pinHash: hashPin(pin),
+        publicKey: "",
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     response = `END Registration successful`;
   }
@@ -70,9 +118,9 @@ ${nfts![0]!.asset_code} - ${Number(nfts![0].balance)}
     response = `CON Enter PIN`;
   } else if (input.length === 4 && input[2] === "2") {
     const enteredPin = input[3];
-    const user = users[phoneNumber];
+    const user = getUserByPhone(phoneNumber);
 
-    if (!user || user.pin !== enteredPin) {
+    if (!user || user.pinHash !== hashPin(enteredPin)) {
       response = `END Invalid PIN`;
     } else {
       // WORKER MENU
@@ -118,6 +166,8 @@ ${nfts![0]!.asset_code} - ${Number(nfts![0].balance)}
 
 app.use(Router);
 
-app.listen(8000, () => {
-  console.log("USSD server running on port 8000");
+hydrateUserStore().then(() => {
+  app.listen(8000, () => {
+    console.log("USSD server running on port 8000");
+  });
 });

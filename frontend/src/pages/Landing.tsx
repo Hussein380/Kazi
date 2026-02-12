@@ -1,25 +1,13 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/context/AppContext';
-import { useNavigate } from 'react-router-dom';
-import { UserRole } from '@/types';
-import { sampleWorkers, sampleEmployer } from '@/lib/sampleData';
 import heroImage from '@/assets/hero-workers.jpg';
 import { CheckCircle2, Shield, ArrowRight, UserSquare2, Briefcase } from 'lucide-react';
+import { WorkerRegistrationModal } from '@/components/WorkerRegistrationModal';
+import { EmployerRegistrationModal } from '@/components/EmployerRegistrationModal';
 
 export default function Landing() {
-  const { setUserRole, setCurrentUser } = useApp();
-  const navigate = useNavigate();
-
-  const handleRoleSelect = (role: UserRole) => {
-    setUserRole(role);
-    if (role === 'worker') {
-      setCurrentUser(sampleWorkers[0]);
-      navigate('/profile');
-    } else {
-      setCurrentUser(sampleEmployer);
-      navigate('/workers');
-    }
-  };
+  const [workerModalOpen, setWorkerModalOpen] = useState(false);
+  const [employerModalOpen, setEmployerModalOpen] = useState(false);
 
   return (
     <div className="flex flex-col min-h-[100dvh]">
@@ -54,10 +42,10 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-up animation-delay-300">
-              <Button size="lg" className="h-12 px-8 text-base shadow-lg hover:shadow-xl transition-all" onClick={() => handleRoleSelect('employer')}>
+              <Button size="lg" className="h-12 px-8 text-base shadow-lg hover:shadow-xl transition-all" onClick={() => setEmployerModalOpen(true)}>
                 Find a Worker
               </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 text-base bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-background/80" onClick={() => handleRoleSelect('worker')}>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-base bg-background/50 backdrop-blur-sm border-primary/20 hover:bg-background/80" onClick={() => setWorkerModalOpen(true)}>
                 Looking for Job?
               </Button>
             </div>
@@ -106,7 +94,7 @@ export default function Landing() {
             {/* Employer Card */}
             <div
               className="group relative cursor-pointer overflow-hidden rounded-3xl border bg-background p-8 hover:shadow-2xl hover:border-primary/50 transition-all duration-300"
-              onClick={() => handleRoleSelect('employer')}
+              onClick={() => setEmployerModalOpen(true)}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10 flex flex-col h-full">
@@ -126,7 +114,7 @@ export default function Landing() {
             {/* Worker Card */}
             <div
               className="group relative cursor-pointer overflow-hidden rounded-3xl border bg-background p-8 hover:shadow-2xl hover:border-primary/50 transition-all duration-300"
-              onClick={() => handleRoleSelect('worker')}
+              onClick={() => setWorkerModalOpen(true)}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative z-10 flex flex-col h-full">
@@ -145,6 +133,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      <WorkerRegistrationModal open={workerModalOpen} onOpenChange={setWorkerModalOpen} />
+      <EmployerRegistrationModal open={employerModalOpen} onOpenChange={setEmployerModalOpen} />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { Horizon, Networks, Keypair } from "@stellar/stellar-sdk";
 import { format } from "date-fns";
 import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 export const server = new Horizon.Server(process.env.STELLAR_HORIZON_BASE_URL!);
 

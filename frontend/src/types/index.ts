@@ -26,6 +26,7 @@ export interface User {
   phone: string;
   location: string;
   avatar?: string;
+  publicKey?: string;
   createdAt: Date;
 }
 

@@ -3,28 +3,130 @@ import { pinata, uploadJsonToPinata } from "../pinata";
 import { createWallet } from "../stellar/wallet.service";
 import express from "express";
 import { platformKeypair, server, timestamp } from "../stellar/stellar.config";
-import { parse } from "date-fns";
-import axios from "axios";
 import { getNFTs } from "../stellar/nft.service";
+import {
+  addUser,
+  getUserByPhone,
+  hashPin,
+  userExists,
+  StoredUser,
+} from "../store/userStore";
 
 export const Router = express.Router();
 
 Router.post("/api/auth/register", async (req, res) => {
   try {
+    const { name, phone, county, role, pin, workTypes } = req.body;
+
+    // Validate required fields
+    if (!name || !phone || !county || !role || !pin) {
+      res.status(400).json({ error: "Missing required fields: name, phone, county, role, pin" });
+      return;
+    }
+
+    if (!/^\+254\d{9}$/.test(phone)) {
+      res.status(400).json({ error: "Phone must be in format +254XXXXXXXXX" });
+      return;
+    }
+
+    if (!/^\d{4}$/.test(pin)) {
+      res.status(400).json({ error: "PIN must be exactly 4 digits" });
+      return;
+    }
+
+    if (role !== "worker" && role !== "employer") {
+      res.status(400).json({ error: "Role must be 'worker' or 'employer'" });
+      return;
+    }
+
+    if (userExists(phone)) {
+      res.status(409).json({ error: "Phone number already registered" });
+      return;
+    }
+
+    // Create Stellar wallet
     const newAccount = await createWallet();
-    const payload = { ...req.body, publicKey: newAccount.publicKey };
+    const pinHash = hashPin(pin);
+    const createdAt = new Date().toISOString();
 
-    const uploadRes = await uploadJsonToPinata([payload]);
+    // Build payload for IPFS (exclude raw pin, include hash)
+    const ipfsPayload = {
+      name,
+      phone,
+      county,
+      role,
+      pinHash,
+      publicKey: newAccount.publicKey,
+      ...(workTypes && { workTypes }),
+      createdAt,
+    };
 
-    const storageRes = await storeOnStellar(
+    const uploadRes = await uploadJsonToPinata([ipfsPayload]);
+
+    await storeOnStellar(
       newAccount.publicKey,
       `employees_${timestamp}`,
       uploadRes?.cid!
     );
-    res.status(201).json(storageRes);
+
+    // Add to in-memory store
+    addUser({
+      name,
+      phone,
+      county,
+      role,
+      pinHash,
+      publicKey: newAccount.publicKey,
+      ...(workTypes && { workTypes }),
+      createdAt,
+    });
+
+    res.status(201).json({
+      publicKey: newAccount.publicKey,
+      role,
+      name,
+      phone,
+      county,
+      ...(workTypes && { workTypes }),
+    });
   } catch (e) {
-    console.log(e);
-    res.status(500).json(e);
+    console.error("Registration error:", e);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+Router.post("/api/auth/login", async (req, res) => {
+  try {
+    const { phone, pin } = req.body;
+
+    if (!phone || !pin) {
+      res.status(400).json({ error: "Phone and PIN are required" });
+      return;
+    }
+
+    const user = getUserByPhone(phone);
+
+    if (!user) {
+      res.status(401).json({ error: "Invalid phone or PIN" });
+      return;
+    }
+
+    if (user.pinHash !== hashPin(pin)) {
+      res.status(401).json({ error: "Invalid phone or PIN" });
+      return;
+    }
+
+    res.status(200).json({
+      publicKey: user.publicKey,
+      role: user.role,
+      name: user.name,
+      phone: user.phone,
+      county: user.county,
+      ...(user.workTypes && { workTypes: user.workTypes }),
+    });
+  } catch (e) {
+    console.error("Login error:", e);
+    res.status(500).json({ error: "Login failed" });
   }
 });
 
@@ -34,30 +136,27 @@ Router.get("/api/employees", async (req, res) => {
     let employees: any[] = [];
 
     for (const [key, value] of Object.entries(account.data_attr || {})) {
-      if (key.startsWith("employees_")) {
+      if (key.startsWith("employees_") && !key.includes("attestations")) {
         const cid = Buffer.from(value, "base64").toString("utf-8");
-        const timestampStr = key.replace("employees_", "");
 
         try {
-          // Fetch data from IPFS
           const ipfsData = await pinata.gateways.public.get(cid);
 
-          // Ensure ipfsData.data is an array before spreading
           if (Array.isArray(ipfsData.data)) {
             employees = [...employees, ...ipfsData.data];
           } else if (ipfsData.data != null) {
             employees = [...employees, ipfsData.data];
-          } // else, ipfsData.data is null, undefined, or not useful, so do nothing
+          }
         } catch (error) {
           console.error(`Error processing ${key}:`, error);
         }
       }
     }
 
-    // Sort oldest to newest
     employees.sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        new Date(a.timestamp || a.createdAt).getTime() -
+        new Date(b.timestamp || b.createdAt).getTime()
     );
 
     res.status(200).json(employees);
@@ -78,6 +177,7 @@ Router.get("/api/employees/:id/work-history", async (req, res) => {
 
   if (!allWorkHistories.ok || allWorkHistories.status !== 200) {
     res.status(500).json(allWorkHistories.text);
+    return;
   }
 
   const employeeWorkHistory = await allWorkHistories.json();
@@ -95,25 +195,21 @@ Router.get("/api/work-histories", async (req, res) => {
     for (const [key, value] of Object.entries(account.data_attr || {})) {
       if (key.startsWith("work_history")) {
         const cid = Buffer.from(value, "base64").toString("utf-8");
-        const timestampStr = key.replace("employees_", "");
 
         try {
-          // Fetch data from IPFS
           const ipfsData = await pinata.gateways.public.get(cid);
 
-          // Ensure ipfsData.data is an array before spreading
           if (Array.isArray(ipfsData.data)) {
             workHistory = [...workHistory, ...ipfsData.data];
           } else if (ipfsData.data != null) {
             workHistory = [...workHistory, ipfsData.data];
-          } // else, ipfsData.data is null, undefined, or not useful, so do nothing
+          }
         } catch (error) {
           console.error(`Error processing ${key}:`, error);
         }
       }
     }
 
-    // Sort oldest to newest
     workHistory.sort(
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
