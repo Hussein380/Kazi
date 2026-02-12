@@ -16,13 +16,13 @@ function WorkerCard({ worker }: { worker: Worker }) {
 
   return (
     <>
-      <div 
+      <div
         onClick={() => setShowProfile(true)}
         className="bg-card rounded-xl p-4 shadow-soft border border-border cursor-pointer hover:border-primary/50 transition-all"
       >
         <div className="flex items-start gap-4">
           {/* Avatar */}
-          <div className="h-14 w-14 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+          <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
             <span className="text-xl font-bold text-primary-foreground">
               {worker.name.charAt(0)}
             </span>
@@ -45,7 +45,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
             {/* Work Types */}
             <div className="flex flex-wrap gap-1 mt-2">
               {worker.workTypes.slice(0, 2).map((type) => (
-                <span 
+                <span
                   key={type}
                   className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded text-xs font-medium"
                 >
@@ -94,7 +94,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
         <DialogContent className="max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full gradient-primary flex items-center justify-center">
+              <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-lg font-bold text-primary-foreground">
                   {worker.name.charAt(0)}
                 </span>
@@ -105,7 +105,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
               </div>
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-2">
             {/* Job Description */}
             <div>
@@ -173,7 +173,7 @@ export default function WorkersList() {
         {/* Workers List */}
         <div className="space-y-3">
           {sampleWorkers.map((worker, index) => (
-            <div 
+            <div
               key={worker.id}
               className="animate-fade-up"
               style={{ animationDelay: `${index * 100}ms` }}

@@ -42,7 +42,7 @@ export function Navbar() {
                 </Link>
 
                 {/* Desktop Navigation */}
-                <div className="hidden md:flex md:items-center md:gap-6">
+                <div className="hidden md:flex md:items-center md:gap-6 md:justify-center md:flex-1">
                     {userRole === 'employer' && (
                         <>
                             <NavLink to="/employer">Dashboard</NavLink>
